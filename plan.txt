@@ -1,0 +1,33 @@
+- Sedii
+  - Vizualizare sedii
+  - Adaugare sediu
+
+- Rute
+  - Vizualizare rute
+  - Adaugare rute 
+
+- Formular
+  - Date contact
+  - Sediu pornire
+  - Oras destinatie
+  - Date contact destinatar
+  - Greutatea coletului
+  - Categorie colet (Fragil/Pretios/Periculos)
+
+- Ruta
+  - Trasee
+  - Conditii transport
+  - Timp estimat
+  - Distanta
+
+- Ticket
+  - Date formular 
+  - Colet 
+  - Ruta
+  - Pret 
+
+- Colet 
+  - ID
+  - Status (Sediu pornire/Tranzit direct/Asteptare destinatar/Tranzit retur)
+  - Pozitie
+
