@@ -1,5 +1,4 @@
 import requests
-import json
 from typing import List
 from dotenv import get_key
 
