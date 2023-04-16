@@ -6,6 +6,7 @@ from jose import jwt, JWTError
 from pymongo import MongoClient
 from classes.form import Form
 from classes.ticket import Ticket
+from security.access_level import AccessLevel
 from security.user import User, RegisteredUser
 from security.register_form import RegisterForm
 from constants import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, JWT_TOKEN
@@ -81,9 +82,26 @@ async def read_users_me(current_user: Annotated[User, Depends(get_current_active
 
 @app.post("/users/register_client")
 async def register_client(register_form: RegisterForm):
+    if register_form.access_level != AccessLevel.CLIENT:
+        raise HTTPException(status_code=403, detail="Forbidden")
     user = RegisteredUser.get(db["users"], register_form.username)
     if user:
         raise HTTPException(status_code=400, detail="Username already registered")
     user = register_form.to_user()
-    db["users"].insert_one(user.dict())
-    return {"message": "User registered"}
+    if not register_form.test:
+        db["users"].insert_one(user.dict())
+    return {"message": "Client registered"}
+
+
+@app.post("/users/register_employee")
+async def register_employee(register_form: RegisterForm,
+                            current_user: Annotated[User, Depends(get_current_active_user)]):
+    if register_form.access_level == AccessLevel.CLIENT or current_user.access_level != AccessLevel.ADMIN:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    user = RegisteredUser.get(db["users"], register_form.username)
+    if user:
+        raise HTTPException(status_code=400, detail="Username already registered")
+    user = register_form.to_user()
+    if not register_form.test:
+        db["users"].insert_one(user.dict())
+    return {"message": "Employee registered"}

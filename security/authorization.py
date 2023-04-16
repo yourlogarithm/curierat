@@ -10,11 +10,8 @@ class Validation:
     @staticmethod
     def authenticate_user(collection: Collection, username: str, password: str):
         user = RegisteredUser.get(collection, username)
-        if not user:
-            return False
-        if not Validation.verify_password(password, user.hashed_password):
-            return False
-        return user
+        if user and Validation.verify_password(password, user.hashed_password):
+            return user
 
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:

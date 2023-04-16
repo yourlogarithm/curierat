@@ -8,17 +8,9 @@ class User(BaseModel):
     email: str
     fullname: str
     disabled: bool = False
-    _access_level: AccessLevel = PrivateAttr(AccessLevel.CLIENT)
+    access_level: AccessLevel = AccessLevel.CLIENT
 
-    @property
-    def access_level(self) -> AccessLevel:
-        return self._access_level
-
-    @access_level.setter
-    def access_level(self, value: AccessLevel):
-        self._access_level = value
-
-    def dict(self):
+    def dict(self, *args, **kwargs):
         return {
             "username": self.username,
             "email": self.email,
@@ -37,7 +29,7 @@ class RegisteredUser(User):
         if user:
             return cls(**user)
 
-    def dict(self):
+    def dict(self, *args, **kwargs):
         dict_val = super().dict()
         dict_val["hashed_password"] = self.hashed_password
         return dict_val
