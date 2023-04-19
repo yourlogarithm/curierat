@@ -7,10 +7,10 @@ client = TestClient(app)
 
 
 class FormSubmissionTest(TestCase):
-    def test_send_form(self):
+    def test_submit_form(self):
         access_token = client.post("/token", data={"username": "office", "password": TEST_DEFAULT_PASSWORD}).json()['access_token']
         headers = {"Authorization": f"Bearer {access_token}"}
-        response = client.post("/package/submit_form", headers=headers, json={
+        response = client.post("/packages/submit_form", headers=headers, json={
             "sender_contact": {
                 "first_name": "Vlad-Sebastian",
                 "last_name": "Cretu",
