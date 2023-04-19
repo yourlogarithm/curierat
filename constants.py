@@ -17,3 +17,6 @@ ORS_HEADERS = {
     "Accept": "application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8",
     "Authorization": ORS_TOKEN
 }
+
+TEST_DEFAULT_PASSWORD = get_key(ENV_PATH, "TEST_PASSWORD")
+TEST_DEFAULT_HASHED_PASSWORD = get_key(ENV_PATH, "HASHED_TEST_PASSWORD")

@@ -1,8 +1,13 @@
 from typing import Annotated
-from datetime import timedelta
+from datetime import timedelta, datetime
 from fastapi import Depends, HTTPException, FastAPI, status
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import jwt, JWTError
+
+from classes.form import Form
+from classes.route import Route
+from classes.ticket import Ticket
+from classes.transport import Transport
 from security.access_level import AccessLevel
 from security.user import User, RegisteredUser
 from security.register_form import RegisterForm
@@ -90,3 +95,79 @@ async def register_employee(register_form: RegisterForm,
     if not test:
         CollectionProvider.users().insert_one(user.dict())
     return {"message": "Employee registered"}
+
+
+@app.post("/package/submit_form")
+async def form(form_: Form, current_user: Annotated[User, Depends(get_current_active_user)]):
+    if current_user.access_level not in (AccessLevel.OFFICE | AccessLevel.ADMIN):
+        raise HTTPException(status_code=403, detail="Forbidden")
+    return Ticket.get_price(form_)
+
+
+@app.post("/package/submit_ticket")
+async def ticket(ticket_: Ticket, current_user: Annotated[User, Depends(get_current_active_user)], test: bool = False):
+    if current_user.access_level not in (AccessLevel.OFFICE | AccessLevel.ADMIN):
+        raise HTTPException(status_code=403, detail="Forbidden")
+    destination = ticket_.destination
+    current_timestamp = datetime.now()
+    routes = CollectionProvider.routes().aggregate([
+        {"$match": {
+            "cities": {"$in": [destination]},
+            "schedule": {"$gt": current_timestamp}
+        }},
+        {"$lookup": {
+            "from": "transports",
+            "localField": "transport",
+            "foreignField": "_id", "as": "transport"
+        }},
+        {"$project": {
+             "cities": 1,
+             "transport": {"$arrayElemAt": ["$transport", 0]},
+             "current_position": 1,
+             "schedule": 1,
+             "coordinates": 1
+         }}
+    ])
+    if not test:
+        CollectionProvider.tickets().insert_one(ticket_.dict())
+    return {"message": "Ticket added"}
+
+
+@app.post("/route/add")
+async def add_route(route: Route, current_user: Annotated[User, Depends(get_current_active_user)], test: bool = False):
+    if current_user.access_level != AccessLevel.ADMIN:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    transport = CollectionProvider.transports().find_one({"_id": route.transport})
+    if not transport:
+        raise HTTPException(status_code=400, detail="Transport not found")
+    if not test:
+        CollectionProvider.routes().insert_one(route.dict())
+    return {"message": "Route added"}
+
+
+@app.post("/route/delete")
+async def delete_route(route: Route, current_user: Annotated[User, Depends(get_current_active_user)], test: bool = False):
+    if current_user.access_level != AccessLevel.ADMIN:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    if not test:
+        CollectionProvider.routes().delete_one({"_id": route._id})
+    return {"message": "Route deleted"}
+
+
+@app.post("/transport/add")
+async def add_transport(transport: Transport, current_user: Annotated[User, Depends(get_current_active_user)],
+                        test: bool = False):
+    if current_user.access_level != AccessLevel.ADMIN:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    if not test:
+        CollectionProvider.transports().insert_one(transport.dict())
+    return {"message": "Transport added"}
+
+
+@app.post("/transport/delete")
+async def delete_transport(transport: Transport, current_user: Annotated[User, Depends(get_current_active_user)], test: bool = False):
+    if current_user.access_level != AccessLevel.ADMIN:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    if not test:
+        CollectionProvider.transports().delete_one({"_id": transport.id})
+    return {"message": "Transport deleted"}
