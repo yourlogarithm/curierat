@@ -10,33 +10,33 @@ from security.user import User, RegisteredUser
 router = APIRouter()
 
 
-@router.get("/users/me")
-async def read_users_me(current_user: Annotated[User, Depends(get_current_active_user)]):
+@router.get("/users/{username}")
+async def read_users_me(username, current_user: Annotated[User, Depends(get_current_active_user)]):
+    if current_user.access_level == AccessLevel.ADMIN:
+        user = RegisteredUser.get(CollectionProvider.users(), username)
+        if user:
+            return user
+        raise HTTPException(status_code=404, detail="User not found")
+    elif current_user.username != username:
+        raise HTTPException(status_code=403, detail="Forbidden")
     return current_user
 
 
-@router.post("/users/register_client")
-async def register_client(register_form: RegisterForm, test: bool = False):
-    if register_form.access_level != AccessLevel.CLIENT:
+@router.post("/users/add")
+async def add_user(regiser_form: RegisterForm, current_user: Annotated[User, Depends(get_current_active_user)]):
+    # only admins can add moderators and admins, moderators can add users with lower access level
+    if current_user.access_level.value < AccessLevel.MODERATOR.value or (current_user.access_level == AccessLevel.MODERATOR and regiser_form.access_level.value >= AccessLevel.MODERATOR.value):
         raise HTTPException(status_code=403, detail="Forbidden")
-    user = RegisteredUser.get(CollectionProvider.users(), register_form.username)
-    if user:
+    if CollectionProvider.users().find_one({"username": regiser_form.username}):
         raise HTTPException(status_code=400, detail="Username already registered")
-    user = register_form.to_user()
-    if not test:
-        CollectionProvider.users().insert_one(user.dict())
-    return {"message": "Client registered"}
+    CollectionProvider.users().insert_one(regiser_form.to_user().dict())
+    return {"message": "User added"}
 
 
-@router.post("/users/register_employee")
-async def register_employee(register_form: RegisterForm,
-                            current_user: Annotated[User, Depends(get_current_active_user)], test: bool = False):
-    if register_form.access_level == AccessLevel.CLIENT or current_user.access_level != AccessLevel.ADMIN:
+@router.get("/users/delete/{username}")
+async def delete_user(username, current_user: Annotated[User, Depends(get_current_active_user)]):
+    if current_user.access_level != AccessLevel.ADMIN:
         raise HTTPException(status_code=403, detail="Forbidden")
-    user = RegisteredUser.get(CollectionProvider.users(), register_form.username)
-    if user:
-        raise HTTPException(status_code=400, detail="Username already registered")
-    user = register_form.to_user()
-    if not test:
-        CollectionProvider.users().insert_one(user.dict())
-    return {"message": "Employee registered"}
+    if CollectionProvider.users().delete_one({"username": username}).deleted_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"message": "User deleted"}

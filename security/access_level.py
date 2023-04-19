@@ -5,4 +5,5 @@ class AccessLevel(Flag):
     CLIENT = 0
     COURIER = 1
     OFFICE = 2
-    ADMIN = 3
+    MODERATOR = 3
+    ADMIN = 4
