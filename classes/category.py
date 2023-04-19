@@ -2,6 +2,6 @@ from enum import Enum
 
 
 class Category(Enum):
-    Fragile = "fragile"
-    Precious = "precious"
-    Dangerous = "dangerous"
+    Fragile = 0
+    Precious = 1
+    Dangerous = 2

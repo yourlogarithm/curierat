@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import Flag
 
 
-class AccessLevel(Enum):
+class AccessLevel(Flag):
     CLIENT = 0
     COURIER = 1
     OFFICE = 2
