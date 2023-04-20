@@ -12,21 +12,25 @@ from security.user import User
 
 router = APIRouter()
 
+_BASE_ACCESS_LEVELS = AccessLevel.OFFICE,
+_PRIVILEGED_ACCESS_LEVELS = AccessLevel.OFFICE, AccessLevel.ADMIN
 
-@router.post("/packages/submit_form")
-async def form(form_: Form, current_user: Annotated[User, Depends(get_current_active_user)]):
-    if current_user.access_level not in (AccessLevel.OFFICE | AccessLevel.ADMIN):
+
+@router.post("/packages/calculate_price")
+async def calculate_price(form_: Form, current_user: Annotated[User, Depends(get_current_active_user)]):
+    if current_user.access_level not in _BASE_ACCESS_LEVELS + _PRIVILEGED_ACCESS_LEVELS:
         raise HTTPException(status_code=403, detail="Forbidden")
     return Ticket.get_price(form_)
 
 
-@router.post("/packages/submit_ticket")
-async def ticket(ticket_: Ticket, current_user: Annotated[User, Depends(get_current_active_user)], test: bool = False):
-    if current_user.access_level not in (AccessLevel.OFFICE | AccessLevel.ADMIN):
+@router.post("/packages/tickets/add")
+async def ticket(ticket_: Ticket, current_user: Annotated[User, Depends(get_current_active_user)]):
+    if current_user.access_level not in _BASE_ACCESS_LEVELS + _PRIVILEGED_ACCESS_LEVELS:
         raise HTTPException(status_code=403, detail="Forbidden")
     destination = ticket_.destination
     current_timestamp = datetime.now()
-    routes = CollectionProvider.routes().aggregate([
+    # TODO: Search for best route in terms of delivery time and category of transport
+    routes = list(CollectionProvider.routes().aggregate([
         {"$match": {
             "cities": {"$in": [destination]},
             "schedule": {"$gt": current_timestamp}
@@ -43,7 +47,20 @@ async def ticket(ticket_: Ticket, current_user: Annotated[User, Depends(get_curr
              "schedule": 1,
              "coordinates": 1
          }}
-    ])
-    if not test:
-        CollectionProvider.tickets().insert_one(ticket_.dict())
-    return {"message": "Ticket added"}
+    ]))
+    return CollectionProvider.tickets().insert_one(ticket_.dict()).inserted_id
+
+
+@router.get("/packages/tickets/{ticket_id}")
+async def ticket(ticket_id: str, current_user: Annotated[User, Depends(get_current_active_user)]):
+    if current_user.access_level not in _PRIVILEGED_ACCESS_LEVELS:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    return CollectionProvider.tickets().find_one({"_id": ticket_id})
+
+
+@router.post("/packages/tickets/update_status/{ticket_id}")
+async def ticket(ticket_id: str, closed: bool, current_user: Annotated[User, Depends(get_current_active_user)]):
+    if current_user.access_level not in _PRIVILEGED_ACCESS_LEVELS:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    CollectionProvider.tickets().update_one({"_id": ticket_id}, {"$set": {"closed": closed}})
+    return {"message": "Ticket status updated"}

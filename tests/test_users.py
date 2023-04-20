@@ -14,14 +14,7 @@ class UsersTest(TestClient):
 
     @classmethod
     def setUp(cls):
-        CollectionProvider.users().drop()
-        CollectionProvider.users().insert_many([
-            {"username": "admin", "email": "admin@curierat.com", "fullname": "Admin", "hashed_password": TEST_DEFAULT_HASHED_PASSWORD, "access_level": 4, "disabled": False},
-            {"username": "moderator", "email": "moderator@curierat.com", "fullname": "Moderator", "hashed_password": TEST_DEFAULT_HASHED_PASSWORD, "access_level": 3, "disabled": False},
-            {"username": "office", "email": "office@curierat.com", "fullname": "Office", "hashed_password": TEST_DEFAULT_HASHED_PASSWORD, "access_level": 2, "disabled": False},
-            {"username": "courier", "email": "courier@curierat.com", "fullname": "Courier", "hashed_password": TEST_DEFAULT_HASHED_PASSWORD, "access_level": 1, "disabled": False},
-            {"username": "client", "email": "client@curierat.com", "fullname": "Client", "hashed_password": TEST_DEFAULT_HASHED_PASSWORD, "access_level": 0, "disabled": False}
-        ])
+        cls.clear_db()
 
     def test_add_user_as_non_privileged(self):
         response = self.client.post("/users/add", headers=self.authorize("client", TEST_DEFAULT_PASSWORD), json=self.TEST_USER_REGISTER_FORM)

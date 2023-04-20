@@ -1,11 +1,11 @@
-from pydantic import BaseModel
 from .form import Form
 from .category import Category
 from .route import Route
 
 
-class Ticket(Form, BaseModel):
+class Ticket(Form):
     price: float
+    closed: bool = False
 
     @staticmethod
     def get_price(form: Form):
