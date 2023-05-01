@@ -16,42 +16,46 @@ _BASE_ACCESS_LEVELS = AccessLevel.OFFICE,
 _PRIVILEGED_ACCESS_LEVELS = AccessLevel.OFFICE, AccessLevel.ADMIN
 
 
-@router.post("/packages/calculate_price")
+@router.post("/tickets/calculate_price")
 async def calculate_price(form_: Form, current_user: Annotated[User, Depends(get_current_active_user)]):
     if current_user.access_level not in _BASE_ACCESS_LEVELS + _PRIVILEGED_ACCESS_LEVELS:
         raise HTTPException(status_code=403, detail="Forbidden")
     return Ticket.get_price(form_)
 
 
-@router.post("/packages/tickets/add")
+@router.post("/tickets/add")
 async def ticket(ticket_: Ticket, current_user: Annotated[User, Depends(get_current_active_user)]):
     if current_user.access_level not in _BASE_ACCESS_LEVELS + _PRIVILEGED_ACCESS_LEVELS:
         raise HTTPException(status_code=403, detail="Forbidden")
-    destination = ticket_.destination
     current_timestamp = datetime.now()
-    # TODO: Search for best route in terms of delivery time and category of transport
     routes = list(CollectionProvider.routes().aggregate([
-        {"$match": {
-            "cities": {"$in": [destination]},
-            "schedule": {"$gt": current_timestamp}
-        }},
-        {"$lookup": {
-            "from": "transports",
-            "localField": "transport",
-            "foreignField": "_id", "as": "transport"
-        }},
-        {"$project": {
-             "cities": 1,
-             "transport": {"$arrayElemAt": ["$transport", 0]},
-             "current_position": 1,
-             "schedule": 1,
-             "coordinates": 1
-         }}
+        {
+            "$match": {
+                "cities": {"$all": [ticket_.office, ticket_.destination]},
+                "schedule": {"$gt": current_timestamp}
+            },
+        },
+        {
+            "$project": {
+                "office_index": {"$indexOfArray": ["$cities", ticket_.office]},
+                "destination_index": {"$indexOfArray": ["$cities", ticket_.destination]},
+                "transport": 1,
+                "coordinates": 1,
+                "schedule": 1,
+                "current_position": 1
+            }
+        },
+        {"$match": {"$expr": {"$lt": ["$office_index", "$destination_index"]}}},
+        {"$match": {"$expr": {"$lte": ["$office_index", "$current_position"]}}},
+        {"$sort": {"schedule": 1}}
     ]))
-    return CollectionProvider.tickets().insert_one(ticket_.dict()).inserted_id
+    if len(routes) == 0:
+        raise HTTPException(status_code=404, detail="No route found")
+
+    return str(CollectionProvider.tickets().insert_one(ticket_.to_dict()).inserted_id)
 
 
-@router.get("/packages/tickets/{ticket_id}")
+@router.get("/tickets/{ticket_id}")
 async def ticket(ticket_id: str, current_user: Annotated[User, Depends(get_current_active_user)]):
     if current_user.access_level not in _PRIVILEGED_ACCESS_LEVELS:
         raise HTTPException(status_code=403, detail="Forbidden")

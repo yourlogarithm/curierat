@@ -1,9 +1,9 @@
-from enum import Enum
+from enum import IntEnum
 
 
-class AccessLevel(Enum):
-    ADMIN = 0
-    MODERATOR = 1
+class AccessLevel(IntEnum):
+    CLIENT = 0
+    COURIER = 1
     OFFICE = 2
-    COURIER = 3
-    CLIENT = 4
+    MODERATOR = 3
+    ADMIN = 4

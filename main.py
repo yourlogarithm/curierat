@@ -1,19 +1,29 @@
 from typing import Annotated
 from datetime import timedelta
 from fastapi import Depends, HTTPException, FastAPI, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from constants import ACCESS_TOKEN_EXPIRE_MINUTES
 from security.authorization import Validation
 from security.token import Token
 from classes.database import CollectionProvider
-from routers import packages, routes, transports, users
+from routers import tickets_route, routes_route, transports_route, users_route
 
 app = FastAPI()
 
-app.include_router(packages.router)
-app.include_router(routes.router)
-app.include_router(transports.router)
-app.include_router(users.router)
+app.include_router(tickets_route.router)
+app.include_router(routes_route.router)
+app.include_router(transports_route.router)
+app.include_router(users_route.router)
+
+origins = ["*"]  # Change this to your ReactJS application origin(s)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.post("/token")

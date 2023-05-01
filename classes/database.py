@@ -2,16 +2,17 @@ import os
 from typing import ClassVar
 from pymongo import MongoClient
 from dotenv import get_key
+from constants import ENV_PATH
 
 
 class CollectionProvider:
     @staticmethod
     def get_database_name():
-        if "PYTEST_CURRENT_TEST" in os.environ:
+        if os.environ.get("TESTING"):
             return "test_curierat"
         return "curierat"
 
-    _client: ClassVar[MongoClient] = MongoClient(get_key(".env", "MONGO_URL"))
+    _client: ClassVar[MongoClient] = MongoClient(get_key(ENV_PATH, "MONGO_URL"))
     
     @classmethod
     def _database(cls):
@@ -36,3 +37,7 @@ class CollectionProvider:
     @classmethod
     def routes(cls):
         return cls._database()["routes"]
+
+    @classmethod
+    def cities(cls):
+        return cls._database()["cities"]

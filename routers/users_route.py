@@ -25,7 +25,7 @@ async def read_users_me(username, current_user: Annotated[User, Depends(get_curr
 @router.post("/users/add")
 async def add_user(regiser_form: RegisterForm, current_user: Annotated[User, Depends(get_current_active_user)]):
     # only admins can add moderators and admins, moderators can add users with lower access level
-    if current_user.access_level.value < AccessLevel.MODERATOR.value or (current_user.access_level == AccessLevel.MODERATOR and regiser_form.access_level.value >= AccessLevel.MODERATOR.value):
+    if current_user.access_level < AccessLevel.MODERATOR or (current_user.access_level == AccessLevel.MODERATOR and regiser_form.access_level >= AccessLevel.MODERATOR):
         raise HTTPException(status_code=403, detail="Forbidden")
     if CollectionProvider.users().find_one({"username": regiser_form.username}):
         raise HTTPException(status_code=400, detail="Username already registered")
@@ -34,7 +34,7 @@ async def add_user(regiser_form: RegisterForm, current_user: Annotated[User, Dep
 
 
 @router.get("/users/delete/{username}")
-async def delete_user(username, current_user: Annotated[User, Depends(get_current_active_user)]):
+async def delete_user(username: str, current_user: Annotated[User, Depends(get_current_active_user)]):
     if current_user.access_level != AccessLevel.ADMIN:
         raise HTTPException(status_code=403, detail="Forbidden")
     if CollectionProvider.users().delete_one({"username": username}).deleted_count == 0:

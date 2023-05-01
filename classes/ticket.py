@@ -1,6 +1,6 @@
 from .form import Form
 from .category import Category
-from .route import Route
+from .open_route_service import OpenRouteService
 
 
 class Ticket(Form):
@@ -18,9 +18,15 @@ class Ticket(Form):
                 category_multiplier = 1.5
             case _:
                 raise ValueError("Invalid category")
-        coords = Route.get_coordinates_of_cities([form.office, form.destination])
-        distances, _ = Route.get_distance_and_duration_between_coords(coords)
-        return (form.weight * 5 + sum(distances) * .25) * category_multiplier  # TODO: find optimal route
+        data = OpenRouteService.get_route_data([form.office, form.destination])
+        return (form.weight * 5 + data['total_distance'] * .25) * category_multiplier
+
+    def to_dict(self):
+        form_dict = super().to_dict()
+        form_dict['price'] = self.price
+        form_dict['closed'] = self.closed
+        return form_dict
+
 
 
     
