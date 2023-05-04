@@ -1,4 +1,4 @@
-from pydantic import BaseModel, PrivateAttr
+from pydantic import BaseModel
 from pymongo.collection import Collection
 from security.access_level import AccessLevel
 

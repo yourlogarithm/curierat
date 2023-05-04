@@ -1,5 +1,4 @@
-from classes.database import CollectionProvider
-from constants import TEST_DEFAULT_PASSWORD, TEST_DEFAULT_HASHED_PASSWORD
+from constants import TEST_DEFAULT_PASSWORD
 from tests.test_client import TestClient
 
 

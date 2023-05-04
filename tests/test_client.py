@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from fastapi.testclient import TestClient as FastApiTestClient
 from unittest import TestCase
-from classes.database import CollectionProvider
+from classes.database import DatabaseProvider
 from classes.route import Route, RawRoute
 from constants import TEST_DEFAULT_HASHED_PASSWORD
 from main import app
@@ -13,8 +13,8 @@ class TestClient(TestCase):
 
     @staticmethod
     def clear_db():
-        CollectionProvider.users().drop()
-        CollectionProvider.users().insert_many([
+        DatabaseProvider.users().drop()
+        DatabaseProvider.users().insert_many([
             {"username": "admin", "email": "admin@curierat.com", "fullname": "Admin", "hashed_password": TEST_DEFAULT_HASHED_PASSWORD, "access_level": 4, "disabled": False},
             {"username": "moderator", "email": "moderator@curierat.com", "fullname": "Moderator", "hashed_password": TEST_DEFAULT_HASHED_PASSWORD, "access_level": 3, "disabled": False},
             {"username": "office", "email": "office@curierat.com", "fullname": "Office", "hashed_password": TEST_DEFAULT_HASHED_PASSWORD, "access_level": 2, "disabled": False},
@@ -25,14 +25,15 @@ class TestClient(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.clear_db()
-        CollectionProvider.routes().drop()
-        CollectionProvider.transports().drop()
-        CollectionProvider.transports().insert_many([
-            {"id": "TRUCK1", "cargo_category": 0},
-            {"id": "TRUCK2", "cargo_category": 1},
-            {"id": "TRUCK3", "cargo_category": 2},
+        DatabaseProvider.routes().drop()
+        DatabaseProvider.transports().drop()
+        DatabaseProvider.transports().insert_many([
+            {"_id": "TRUCK1", "cargo_category": 0, "max_weight": 1000},
+            {"_id": "TRUCK2", "cargo_category": 1, "max_weight": 750},
+            {"_id": "TRUCK3", "cargo_category": 2, "max_weight": 1200},
+            {"_id": "TRUCK4", "cargo_category": 0, "max_weight": 1500},
         ])
-        CollectionProvider.routes().insert_many([
+        DatabaseProvider.routes().insert_many([
             Route.from_raw_route(RawRoute(**{
                 "cities": ["Timisoara", "Craiova", "Bucuresti"],
                 "start": datetime.now() + timedelta(days=1),
@@ -57,4 +58,4 @@ class TestClient(TestCase):
         return {"Authorization": f"Bearer {access_token}"}
 
     def test_db(self):
-        self.assertEqual(CollectionProvider.get_database_name(), "test_curierat")
+        self.assertEqual(DatabaseProvider.get_database_name(), "test_curierat")

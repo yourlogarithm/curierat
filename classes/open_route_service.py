@@ -2,7 +2,7 @@ from typing import Tuple, List, Dict
 
 import requests
 
-from classes.database import CollectionProvider
+from classes.database import DatabaseProvider
 from constants import ORS_COORDS_URL, ORS_DISTANCE_URL, ORS_HEADERS
 
 
@@ -13,11 +13,11 @@ class OpenRouteService:
         :param city: city name
         :return: (lat, lon)
         """
-        if (entry := CollectionProvider.cities().find_one({"name": city})) is not None:
+        if (entry := DatabaseProvider.cities().find_one({"name": city})) is not None:
             return tuple(entry["coordinates"])
         data = requests.get(ORS_COORDS_URL + city).json()
         coordinates = tuple(data['features'][0]['geometry']['coordinates'])
-        CollectionProvider.cities().insert_one({"name": city, "coordinates": coordinates, "relations": {}})
+        DatabaseProvider.cities().insert_one({"name": city, "coordinates": coordinates, "relations": {}})
         return tuple(coordinates)
 
     @classmethod
@@ -30,7 +30,7 @@ class OpenRouteService:
 
     @staticmethod
     def _query_route_data_from_db(cities: List[str], data: Dict[str, int | List[int]]) -> Dict[str, int | List[int]] | None:
-        queried_cities = list(CollectionProvider.cities().find({"name": {"$in": cities}}))
+        queried_cities = list(DatabaseProvider.cities().find({"name": {"$in": cities}}))
         if len(queried_cities) == len(cities):
             mapped_values = {}
             cities_set = set(cities)
@@ -83,10 +83,10 @@ class OpenRouteService:
         for i, segment in enumerate(result):
             distance, duration = segment["distance"], segment["duration"]
             city, next_city = cities[i], cities[i+1]
-            CollectionProvider.cities().update_one(
+            DatabaseProvider.cities().update_one(
                 {"name": city},
                 {"$set": {f"relations.{next_city}": {"distance": distance, "duration": duration}}})
-            CollectionProvider.cities().update_one(
+            DatabaseProvider.cities().update_one(
                 {"name": next_city},
                 {"$set": {"relations": {city: {"distance": distance, "duration": duration}}}})
             data["total_distance"] += distance

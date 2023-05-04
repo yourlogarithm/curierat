@@ -20,7 +20,7 @@
   - Timp estimat
   - Distanta
 
-- Ticket
+- Package
   - Date formular 
   - Colet 
   - Ruta

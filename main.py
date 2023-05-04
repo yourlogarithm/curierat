@@ -6,17 +6,17 @@ from fastapi.security import OAuth2PasswordRequestForm
 from constants import ACCESS_TOKEN_EXPIRE_MINUTES
 from security.authorization import Validation
 from security.token import Token
-from classes.database import CollectionProvider
-from routers import tickets_route, routes_route, transports_route, users_route
+from classes.database import DatabaseProvider
+from routers import packages_router, routes_router, transports_router, users_router
 
 app = FastAPI()
 
-app.include_router(tickets_route.router)
-app.include_router(routes_route.router)
-app.include_router(transports_route.router)
-app.include_router(users_route.router)
+app.include_router(packages_router.router)
+app.include_router(routes_router.router)
+app.include_router(transports_router.router)
+app.include_router(users_router.router)
 
-origins = ["*"]  # Change this to your ReactJS application origin(s)
+origins = ["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -28,7 +28,7 @@ app.add_middleware(
 
 @app.post("/token")
 async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-    user = Validation.authenticate_user(CollectionProvider.users(), form_data.username, form_data.password)
+    user = Validation.authenticate_user(DatabaseProvider.users(), form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

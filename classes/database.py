@@ -5,7 +5,7 @@ from dotenv import get_key
 from constants import ENV_PATH
 
 
-class CollectionProvider:
+class DatabaseProvider:
     @staticmethod
     def get_database_name():
         if os.environ.get("TESTING"):
@@ -22,9 +22,9 @@ class CollectionProvider:
     def users(cls):
         return cls._database()["users"]
 
-    @classmethod
-    def tickets(cls):
-        return cls._database()["tickets"]
+    # @classmethod
+    # def packages(cls):
+    #     return cls._database()["packages"]
 
     @classmethod
     def packages(cls):

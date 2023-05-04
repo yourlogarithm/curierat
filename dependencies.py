@@ -4,7 +4,7 @@ from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 
-from classes.database import CollectionProvider
+from classes.database import DatabaseProvider
 from constants import JWT_TOKEN, ALGORITHM
 from security.token import TokenData
 from security.user import RegisteredUser, User
@@ -26,7 +26,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         token_data = TokenData(username=username)
     except JWTError:
         raise credentials_exception
-    user = RegisteredUser.get(CollectionProvider.users(), token_data.username)
+    user = RegisteredUser.get(DatabaseProvider.users(), token_data.username)
     if user is None:
         raise credentials_exception
     return user

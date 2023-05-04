@@ -1,7 +1,7 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 
-from classes.database import CollectionProvider
+from classes.database import DatabaseProvider
 from dependencies import get_current_active_user
 from security.access_level import AccessLevel
 from security.register_form import RegisterForm
@@ -13,7 +13,7 @@ router = APIRouter()
 @router.get("/users/{username}")
 async def read_users_me(username, current_user: Annotated[User, Depends(get_current_active_user)]):
     if current_user.access_level == AccessLevel.ADMIN:
-        user = RegisteredUser.get(CollectionProvider.users(), username)
+        user = RegisteredUser.get(DatabaseProvider.users(), username)
         if user:
             return user
         raise HTTPException(status_code=404, detail="User not found")
@@ -27,9 +27,9 @@ async def add_user(regiser_form: RegisterForm, current_user: Annotated[User, Dep
     # only admins can add moderators and admins, moderators can add users with lower access level
     if current_user.access_level < AccessLevel.MODERATOR or (current_user.access_level == AccessLevel.MODERATOR and regiser_form.access_level >= AccessLevel.MODERATOR):
         raise HTTPException(status_code=403, detail="Forbidden")
-    if CollectionProvider.users().find_one({"username": regiser_form.username}):
+    if DatabaseProvider.users().find_one({"username": regiser_form.username}):
         raise HTTPException(status_code=400, detail="Username already registered")
-    CollectionProvider.users().insert_one(regiser_form.to_user().dict())
+    DatabaseProvider.users().insert_one(regiser_form.to_user().dict())
     return {"message": "User added"}
 
 
@@ -37,6 +37,6 @@ async def add_user(regiser_form: RegisterForm, current_user: Annotated[User, Dep
 async def delete_user(username: str, current_user: Annotated[User, Depends(get_current_active_user)]):
     if current_user.access_level != AccessLevel.ADMIN:
         raise HTTPException(status_code=403, detail="Forbidden")
-    if CollectionProvider.users().delete_one({"username": username}).deleted_count == 0:
+    if DatabaseProvider.users().delete_one({"username": username}).deleted_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
     return {"message": "User deleted"}
