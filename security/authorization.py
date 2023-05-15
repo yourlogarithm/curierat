@@ -5,7 +5,7 @@ from security.user import RegisteredUser
 
 
 class Validation:
-    pwd_context: ClassVar[CryptContext] = CryptContext(schemes=["argon2"], deprecated="auto")
+    pwd_context: ClassVar[CryptContext] = CryptContext(schemes=['argon2'], deprecated='auto')
 
     @staticmethod
     def authenticate_user(collection: Collection, username: str, password: str):

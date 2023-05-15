@@ -12,21 +12,21 @@ class Transport(BaseModel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.id = self.id.upper().replace(" ", "")
-        if re.match(r"[^A-Z0-9]", self.id):
-            raise ValueError("Transport ID must only contain letters and numbers")
+        self.id = self.id.upper().replace(' ', '')
+        if re.match(r'[^A-Z0-9]', self.id):
+            raise ValueError('Transport ID must only contain letters and numbers')
 
     @classmethod
     def from_dict(cls, data: Mapping):
         return cls(
-            id=data["_id"],
-            cargo_category=Category(data["cargo_category"]),
-            max_weight=data["max_weight"]
+            id=data['_id'],
+            cargo_category=Category(data['cargo_category']),
+            max_weight=data['max_weight']
         )
 
     def to_dict(self):
         return {
-            "_id": self.id,
-            "cargo_category": self.cargo_category.value,
-            "max_weight": self.max_weight
+            '_id': self.id,
+            'cargo_category': self.cargo_category.value,
+            'max_weight': self.max_weight
         }

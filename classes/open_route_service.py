@@ -2,35 +2,35 @@ from typing import Tuple, List, Dict
 
 import requests
 
-from classes.database import DatabaseProvider
+from classes.database_provider import DatabaseProvider
 from constants import ORS_COORDS_URL, ORS_DISTANCE_URL, ORS_HEADERS
 
 
 class OpenRouteService:
     @staticmethod
     def _get_coordinates_of_city(city: str) -> Tuple[float, float]:
-        """
+        '''
         :param city: city name
         :return: (lat, lon)
-        """
-        if (entry := DatabaseProvider.cities().find_one({"name": city})) is not None:
-            return tuple(entry["coordinates"])
+        '''
+        if (entry := DatabaseProvider.cities().find_one({'name': city})) is not None:
+            return tuple(entry['coordinates'])
         data = requests.get(ORS_COORDS_URL + city).json()
         coordinates = tuple(data['features'][0]['geometry']['coordinates'])
-        DatabaseProvider.cities().insert_one({"name": city, "coordinates": coordinates, "relations": {}})
+        DatabaseProvider.cities().insert_one({'name': city, 'coordinates': coordinates, 'relations': {}})
         return tuple(coordinates)
 
     @classmethod
     def _get_coordinates_of_cities(cls, cities: List[str]):
-        """
+        '''
         :param cities:
         :return: List of tuples of coordinates [(lat, lon), (lat, lon), ...]
-        """
+        '''
         return [cls._get_coordinates_of_city(city) for city in cities]
 
     @staticmethod
     def _query_route_data_from_db(cities: List[str], data: Dict[str, int | List[int]]) -> Dict[str, int | List[int]] | None:
-        queried_cities = list(DatabaseProvider.cities().find({"name": {"$in": cities}}))
+        queried_cities = list(DatabaseProvider.cities().find({'name': {'$in': cities}}))
         if len(queried_cities) == len(cities):
             mapped_values = {}
             cities_set = set(cities)
@@ -59,15 +59,15 @@ class OpenRouteService:
 
     @classmethod
     def get_route_data(cls, cities: List[str]) -> Dict[str, int | List[int]]:
-        """
+        '''
         :param cities: list of city names
         :return: Two lists, one with distances (km) and one with durations (seconds)
-        """
+        '''
         data = {
-            "total_distance": 0,
-            "total_duration": 0,
-            "distances": [],
-            "durations": []
+            'total_distance': 0,
+            'total_duration': 0,
+            'distances': [],
+            'durations': []
         }
         db_data = cls._query_route_data_from_db(cities, data.copy())
         if db_data is not None:
@@ -77,20 +77,20 @@ class OpenRouteService:
         result = requests.post(
             ORS_DISTANCE_URL,
             headers=ORS_HEADERS,
-            json={"coordinates": coordinates,
-                  "units": "km"}
-        ).json()["routes"][0]["segments"]
+            json={'coordinates': coordinates,
+                  'units': 'km'}
+        ).json()['routes'][0]['segments']
         for i, segment in enumerate(result):
-            distance, duration = segment["distance"], segment["duration"]
+            distance, duration = segment['distance'], segment['duration']
             city, next_city = cities[i], cities[i+1]
             DatabaseProvider.cities().update_one(
-                {"name": city},
-                {"$set": {f"relations.{next_city}": {"distance": distance, "duration": duration}}})
+                {'name': city},
+                {'$set': {f'relations.{next_city}': {'distance': distance, 'duration': duration}}})
             DatabaseProvider.cities().update_one(
-                {"name": next_city},
-                {"$set": {"relations": {city: {"distance": distance, "duration": duration}}}})
-            data["total_distance"] += distance
-            data["total_duration"] += duration
-            data["distances"].append(distance)
-            data["durations"].append(duration)
+                {'name': next_city},
+                {'$set': {'relations': {city: {'distance': distance, 'duration': duration}}}})
+            data['total_distance'] += distance
+            data['total_duration'] += duration
+            data['distances'].append(distance)
+            data['durations'].append(duration)
         return data

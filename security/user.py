@@ -12,11 +12,11 @@ class User(BaseModel):
 
     def dict(self, *args, **kwargs):
         return {
-            "username": self.username,
-            "email": self.email,
-            "fullname": self.fullname,
-            "disabled": self.disabled,
-            "access_level": self.access_level.value,
+            'username': self.username,
+            'email': self.email,
+            'fullname': self.fullname,
+            'disabled': self.disabled,
+            'access_level': self.access_level.value,
         }
 
 
@@ -25,11 +25,11 @@ class RegisteredUser(User):
 
     @classmethod
     def get(cls, collection: Collection, username: str) -> 'RegisteredUser | None':
-        user = collection.find_one({"username": username})
+        user = collection.find_one({'username': username})
         if user:
             return cls(**user)
 
     def dict(self, *args, **kwargs):
         dict_val = super().dict()
-        dict_val["hashed_password"] = self.hashed_password
+        dict_val['hashed_password'] = self.hashed_password
         return dict_val

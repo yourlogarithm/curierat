@@ -8,11 +8,11 @@ from constants import ENV_PATH
 class DatabaseProvider:
     @staticmethod
     def get_database_name():
-        if os.environ.get("TESTING"):
-            return "test_curierat"
-        return "curierat"
+        if os.environ.get('TESTING'):
+            return 'test_curierat'
+        return 'curierat'
 
-    _client: ClassVar[MongoClient] = MongoClient(get_key(ENV_PATH, "MONGO_URL"))
+    _client: ClassVar[MongoClient] = MongoClient(get_key(ENV_PATH, 'MONGO_URL'))
     
     @classmethod
     def _database(cls):
@@ -20,24 +20,20 @@ class DatabaseProvider:
 
     @classmethod
     def users(cls):
-        return cls._database()["users"]
-
-    # @classmethod
-    # def packages(cls):
-    #     return cls._database()["packages"]
+        return cls._database()['users']
 
     @classmethod
     def packages(cls):
-        return cls._database()["packages"]
+        return cls._database()['packages']
 
     @classmethod
     def transports(cls):
-        return cls._database()["transports"]
+        return cls._database()['transports']
 
     @classmethod
     def routes(cls):
-        return cls._database()["routes"]
+        return cls._database()['routes']
 
     @classmethod
     def cities(cls):
-        return cls._database()["cities"]
+        return cls._database()['cities']
