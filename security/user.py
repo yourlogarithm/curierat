@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from pymongo.collection import Collection
 from security.access_level import AccessLevel
 
 
@@ -8,7 +7,7 @@ class User(BaseModel):
     email: str
     fullname: str
     disabled: bool = False
-    access_level: AccessLevel = AccessLevel.CLIENT
+    access_level: AccessLevel
 
     def dict(self, *args, **kwargs):
         return {
@@ -18,18 +17,3 @@ class User(BaseModel):
             'disabled': self.disabled,
             'access_level': self.access_level.value,
         }
-
-
-class RegisteredUser(User):
-    hashed_password: str
-
-    @classmethod
-    def get(cls, collection: Collection, username: str) -> 'RegisteredUser | None':
-        user = collection.find_one({'username': username})
-        if user:
-            return cls(**user)
-
-    def dict(self, *args, **kwargs):
-        dict_val = super().dict()
-        dict_val['hashed_password'] = self.hashed_password
-        return dict_val

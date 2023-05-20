@@ -14,20 +14,17 @@ from security.user import User
 
 router = APIRouter()
 
-_BASE_ACCESS_LEVELS = AccessLevel.OFFICE,
-_PRIVILEGED_ACCESS_LEVELS = AccessLevel.OFFICE, AccessLevel.ADMIN
-
 
 @router.post('/packages/calculate_price')
 async def calculate_price(form_: Form, current_user: Annotated[User, Depends(get_current_active_user)]):
-    if current_user.access_level not in _BASE_ACCESS_LEVELS + _PRIVILEGED_ACCESS_LEVELS:
+    if current_user.access_level not in (AccessLevel.Admin, AccessLevel.Moderator, AccessLevel.Office):
         raise HTTPException(status_code=403, detail='Forbidden')
     return form_.price
 
 
 @router.post('/packages/add')
-async def package(package_: Package, current_user: Annotated[User, Depends(get_current_active_user)]):
-    if current_user.access_level not in _BASE_ACCESS_LEVELS + _PRIVILEGED_ACCESS_LEVELS:
+async def add_package(package_: Package, current_user: Annotated[User, Depends(get_current_active_user)]):
+    if current_user.access_level not in (AccessLevel.Admin, AccessLevel.Moderator, AccessLevel.Office):
         raise HTTPException(status_code=403, detail='Forbidden')
     current_timestamp = datetime.now()
     routes = Route.get_best_routes(package_.office, package_.destination, current_timestamp)
@@ -41,8 +38,8 @@ async def package(package_: Package, current_user: Annotated[User, Depends(get_c
 
 
 @router.get('/packages/{username}')
-async def package(username: str, current_user: Annotated[User, Depends(get_current_active_user)]):
-    if current_user.access_level not in _PRIVILEGED_ACCESS_LEVELS:
+async def get_package(username: str, current_user: Annotated[User, Depends(get_current_active_user)]):
+    if current_user.access_level < AccessLevel.Moderator:
         raise HTTPException(status_code=403, detail='Forbidden')
     packages = list(DatabaseProvider.routes().aggregate([
         {'$match': {'packages.username': username}},
@@ -53,8 +50,8 @@ async def package(username: str, current_user: Annotated[User, Depends(get_curre
 
 
 @router.post('/packages/change_status/{package_code}')
-async def change_status(package_code: str, status: PackageStatus, current_user: Annotated[User, Depends(get_current_active_user)]):
-    if current_user.access_level < AccessLevel.MODERATOR and current_user.access_level != AccessLevel.COURIER:
+async def change_package_status(package_code: str, status: PackageStatus, current_user: Annotated[User, Depends(get_current_active_user)]):
+    if current_user.access_level < AccessLevel.Moderator and current_user.access_level != AccessLevel.Courier:
         raise HTTPException(status_code=403, detail='Forbidden')
     update_result = DatabaseProvider.routes().update_one({'packages.code': package_code}, {'$set': {'packages.$.status': status}})
     if update_result.matched_count == 0:

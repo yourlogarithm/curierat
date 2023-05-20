@@ -15,14 +15,14 @@ router = APIRouter()
 
 @router.get('/routes')
 async def get_routes(current_user: Annotated[User, Depends(get_current_active_user)]):
-    if current_user.access_level < AccessLevel.MODERATOR:
+    if current_user.access_level < AccessLevel.Moderator:
         raise HTTPException(status_code=403, detail='Forbidden')
     return [Route.from_dict(route).to_dict() for route in DatabaseProvider.routes().find()]
 
 
 @router.post('/routes/add')
 async def add_route(route: RawRoute, current_user: Annotated[User, Depends(get_current_active_user)]):
-    if current_user.access_level != AccessLevel.ADMIN:
+    if current_user.access_level < AccessLevel.Admin:
         raise HTTPException(status_code=403, detail='Forbidden')
     transport = DatabaseProvider.transports().find_one({'_id': route.transport})
     if not transport:
@@ -32,7 +32,7 @@ async def add_route(route: RawRoute, current_user: Annotated[User, Depends(get_c
 
 @router.post('/routes/delete/{id}')
 async def delete_route(id_: str, current_user: Annotated[User, Depends(get_current_active_user)]):
-    if current_user.access_level != AccessLevel.ADMIN:
+    if current_user.access_level < AccessLevel.Moderator:
         raise HTTPException(status_code=403, detail='Forbidden')
     if DatabaseProvider.routes().delete_one({'_id': ObjectId(id_)}).deleted_count == 0:
         raise HTTPException(status_code=404, detail='Route not found')
@@ -41,7 +41,7 @@ async def delete_route(id_: str, current_user: Annotated[User, Depends(get_curre
 
 @router.get('/routes/package/{package_code}')
 async def get_route_of_package_code(package_code: str, current_user: Annotated[User, Depends(get_current_active_user)]):
-    if current_user.access_level < AccessLevel.MODERATOR and current_user.access_level != AccessLevel.OFFICE:
+    if current_user.access_level < AccessLevel.Moderator and current_user.access_level != AccessLevel.Office:
         raise HTTPException(status_code=403, detail='Forbidden')
     route = DatabaseProvider.routes().find_one({'packages.code': package_code})
     if route is None:

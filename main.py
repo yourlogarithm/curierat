@@ -4,9 +4,8 @@ from fastapi import Depends, HTTPException, FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from constants import ACCESS_TOKEN_EXPIRE_MINUTES
-from security.authorization import Validation
+from security.validation import Validation
 from security.token import Token
-from classes.database_provider import DatabaseProvider
 from routers import packages_router, routes_router, transports_router, users_router
 
 app = FastAPI()
@@ -28,7 +27,7 @@ app.add_middleware(
 
 @app.post('/token')
 async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-    user = Validation.authenticate_user(DatabaseProvider.users(), form_data.username, form_data.password)
+    user = Validation.authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

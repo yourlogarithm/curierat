@@ -1,5 +1,6 @@
-from security.authorization import Validation
-from security.user import User, RegisteredUser
+from security.validation import Validation
+from security.user import User
+from security.registered_user import RegisteredUser
 
 
 class RegisterForm(User):

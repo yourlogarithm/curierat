@@ -8,7 +8,7 @@ class UsersTest(TestClient):
             'email': 'test@curierat.ro',
             'fullname': 'Test',
             'password': 'password',
-            'access_level': 0,
+            'access_level': 1,
     }
 
     @classmethod
@@ -16,7 +16,7 @@ class UsersTest(TestClient):
         cls.clear_db()
 
     def test_add_user_as_non_privileged(self):
-        response = self.client.post('/users/add', headers=self.authorize('client', TEST_DEFAULT_PASSWORD), json=self.TEST_USER_REGISTER_FORM)
+        response = self.client.post('/users/add', headers=self.authorize('courier', TEST_DEFAULT_PASSWORD), json=self.TEST_USER_REGISTER_FORM)
         self.assertEqual(403, response.status_code)
 
     def test_add_user_as_privileged(self):
@@ -39,10 +39,10 @@ class UsersTest(TestClient):
         self.assertEqual(200, response.status_code)
 
     def test_delete_user_as_non_privileged(self):
-        response = self.client.get('/users/delete/test', headers=self.authorize('moderator', TEST_DEFAULT_PASSWORD))
+        response = self.client.get('/users/delete/admin', headers=self.authorize('moderator', TEST_DEFAULT_PASSWORD))
         self.assertEqual(403, response.status_code)
 
     def test_delete_user_as_privileged(self):
         self.client.post('/users/add', headers=self.authorize('moderator', TEST_DEFAULT_PASSWORD), json=self.TEST_USER_REGISTER_FORM)
-        response = self.client.get('/users/delete/test', headers=self.authorize('admin', TEST_DEFAULT_PASSWORD))
+        response = self.client.get('/users/delete/admin', headers=self.authorize('admin', TEST_DEFAULT_PASSWORD))
         self.assertEqual(200, response.status_code)

@@ -2,8 +2,7 @@ from enum import IntEnum
 
 
 class AccessLevel(IntEnum):
-    CLIENT = 0
-    COURIER = 1
-    OFFICE = 2
-    MODERATOR = 3
-    ADMIN = 4
+    Courier = 1
+    Office = 2
+    Moderator = 3
+    Admin = 4
