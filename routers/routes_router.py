@@ -13,6 +13,13 @@ from security.user import User
 router = APIRouter()
 
 
+@router.get('/routes')
+async def get_routes(current_user: Annotated[User, Depends(get_current_active_user)]):
+    if current_user.access_level < AccessLevel.MODERATOR:
+        raise HTTPException(status_code=403, detail='Forbidden')
+    return [Route.from_dict(route).to_dict() for route in DatabaseProvider.routes().find()]
+
+
 @router.post('/routes/add')
 async def add_route(route: RawRoute, current_user: Annotated[User, Depends(get_current_active_user)]):
     if current_user.access_level != AccessLevel.ADMIN:

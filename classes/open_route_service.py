@@ -1,35 +1,36 @@
-from typing import Tuple, List, Dict
+from typing import List, Dict
 
 import requests
 
+from classes.coordinates import Coordinates
 from classes.database_provider import DatabaseProvider
 from constants import ORS_COORDS_URL, ORS_DISTANCE_URL, ORS_HEADERS
 
 
 class OpenRouteService:
     @staticmethod
-    def _get_coordinates_of_city(city: str) -> Tuple[float, float]:
-        '''
+    def _get_coordinates_of_city(city: str) -> Coordinates:
+        """
         :param city: city name
         :return: (lat, lon)
-        '''
+        """
         if (entry := DatabaseProvider.cities().find_one({'name': city})) is not None:
-            return tuple(entry['coordinates'])
+            return Coordinates(*entry['coordinates'])
         data = requests.get(ORS_COORDS_URL + city).json()
-        coordinates = tuple(data['features'][0]['geometry']['coordinates'])
+        coordinates = data['features'][0]['geometry']['coordinates']
         DatabaseProvider.cities().insert_one({'name': city, 'coordinates': coordinates, 'relations': {}})
-        return tuple(coordinates)
+        return Coordinates(*coordinates)
 
     @classmethod
     def _get_coordinates_of_cities(cls, cities: List[str]):
-        '''
+        """
         :param cities:
-        :return: List of tuples of coordinates [(lat, lon), (lat, lon), ...]
-        '''
+        :return: List of Coordinates
+        """
         return [cls._get_coordinates_of_city(city) for city in cities]
 
     @staticmethod
-    def _query_route_data_from_db(cities: List[str], data: Dict[str, int | List[int]]) -> Dict[str, int | List[int]] | None:
+    def _query_route_data_from_db(cities: List[str], data: Dict) -> Dict | None:
         queried_cities = list(DatabaseProvider.cities().find({'name': {'$in': cities}}))
         if len(queried_cities) == len(cities):
             mapped_values = {}
@@ -58,11 +59,11 @@ class OpenRouteService:
         return None
 
     @classmethod
-    def get_route_data(cls, cities: List[str]) -> Dict[str, int | List[int]]:
-        '''
+    def get_route_data(cls, cities: List[str]) -> Dict:
+        """
         :param cities: list of city names
         :return: Two lists, one with distances (km) and one with durations (seconds)
-        '''
+        """
         data = {
             'total_distance': 0,
             'total_duration': 0,
@@ -77,8 +78,7 @@ class OpenRouteService:
         result = requests.post(
             ORS_DISTANCE_URL,
             headers=ORS_HEADERS,
-            json={'coordinates': coordinates,
-                  'units': 'km'}
+            json={'coordinates': [coordinate.to_tuple() for coordinate in coordinates], 'units': 'km'}
         ).json()['routes'][0]['segments']
         for i, segment in enumerate(result):
             distance, duration = segment['distance'], segment['duration']

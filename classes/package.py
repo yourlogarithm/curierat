@@ -8,12 +8,12 @@ from .package_status import PackageStatus
 
 
 class Package(Form):
-    status: PackageStatus = PackageStatus.TRANSIT
+    status: PackageStatus = PackageStatus.Transit
     code: str = None
 
     def __init__(self, **data):
         super().__init__(**data)
-        self.status = self.status or PackageStatus.TRANSIT
+        self.status = self.status or PackageStatus.Transit
         self.code = self.code or md5(str(self).encode()).hexdigest()
 
     @classmethod

@@ -53,7 +53,7 @@ class FormSubmissionTest(TestClient):
         data0 = self.client.post('/packages/add', headers=headers, json=self.get_package('Iasi', 'Brasov')).json()
         code0, id0 = data0['package_code'], data0['route_id']
         self.client.post(f'/packages/change_status/{code0}', headers=self.authorize('courier', TEST_DEFAULT_PASSWORD),
-                         params={'status': PackageStatus.WAITING_RECEIVER.value}).json()
+                         params={'status': PackageStatus.WaitingReceiver.value}).json()
         entry = self.client.get(f'/routes/package/{code0}', headers=headers).json()
         package_entry = next(filter(lambda x: x['code'] == code0, entry['packages']))
-        self.assertEqual(PackageStatus.WAITING_RECEIVER, package_entry['status'])
+        self.assertEqual(PackageStatus.WaitingReceiver, package_entry['status'])

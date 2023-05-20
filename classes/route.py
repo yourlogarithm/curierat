@@ -62,7 +62,7 @@ class Route:
         return cls(cities=raw_route.cities, transport=transport, schedule=schedule, current_position=0, packages=[], current_weight=0)
 
     @classmethod
-    def from_dict(cls, data: Dict | Mapping):
+    def from_dict(cls, data: Mapping):
         return cls(
             id=data['_id'],
             cities=data['cities'],

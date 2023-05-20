@@ -10,6 +10,13 @@ from security.user import User, RegisteredUser
 router = APIRouter()
 
 
+@router.get('/users')
+async def get_all_users(current_user: Annotated[User, Depends(get_current_active_user)]):
+    if current_user.access_level != AccessLevel.ADMIN and current_user.access_level != AccessLevel.MODERATOR:
+        raise HTTPException(status_code=403, detail='Forbidden')
+    return list(DatabaseProvider.users().find({}, {'_id': 0, 'password': 0}))
+
+
 @router.get('/users/{username}')
 async def read_users_me(username, current_user: Annotated[User, Depends(get_current_active_user)]):
     if current_user.access_level == AccessLevel.ADMIN:
