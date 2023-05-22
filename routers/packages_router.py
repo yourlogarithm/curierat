@@ -3,6 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Annotated
 
+from classes.contact import Contact
 from classes.database_provider import DatabaseProvider
 from classes.form import Form
 from classes.package_status import PackageStatus
@@ -39,15 +40,18 @@ class PackagesRouter:
         return {'package_code': package_.code, 'route_id': str(best.id)}
 
     @staticmethod
-    @router.get('/packages/{username}')
-    async def get_package(username: str, current_user: Annotated[User, Depends(get_current_active_user)]):
+    @router.post('/packages/get')
+    async def get_package(contact: Contact, current_user: Annotated[User, Depends(get_current_active_user)]):
         if current_user.access_level < AccessLevel.Moderator:
             raise HTTPException(status_code=403, detail='Forbidden')
         packages = list(DatabaseProvider.routes().aggregate([
-            {'$match': {'packages.username': username}},
+            {'$match': {'packages.sender_contact': contact.dict()}},
             {'$unwind': '$packages'},
-            {'$match': {'packages.username': username}},
+            {'$match': {'packages.sender_contact': contact.dict()}},
+            {'$project': {'_id': 1, 'package': '$packages'}}
         ]))
+        for package in packages:
+            package['_id'] = str(package['_id'])
         return packages
 
     @staticmethod

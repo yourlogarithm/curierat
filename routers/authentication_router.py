@@ -14,7 +14,7 @@ class AuthenticationRouter:
 
     @staticmethod
     @router.post('/token')
-    async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+    async def token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
         user = Validation.authenticate_user(form_data.username, form_data.password)
         if not user:
             raise HTTPException(

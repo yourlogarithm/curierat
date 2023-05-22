@@ -57,3 +57,22 @@ class FormSubmissionTest(TestClient):
         entry = self.client.get(f'/routes/package/{code0}', headers=headers).json()
         package_entry = next(filter(lambda x: x['code'] == code0, entry['packages']))
         self.assertEqual(PackageStatus.WaitingReceiver, package_entry['status'])
+
+    def test_get_package(self):
+        self.clear_db()
+        self.setUpClass()
+        headers = self.authorize('moderator', TEST_DEFAULT_PASSWORD)
+        package = self.get_package('Iasi', 'Brasov')
+        response = self.client.post('/packages/add', headers=headers, json=package).json()
+        new_package = self.get_package('Iasi', 'Brasov')
+        new_package.update({'sender_contact': Contact(
+            first_name='Second Sender First Name',
+            last_name='Second Sender Last Name',
+            email='second_sender@gmail.com',
+            phone='075111111'
+        ).dict()})
+        self.client.post('/packages/add', headers=headers, json=new_package).json()
+        result = self.client.post(f'/packages/get', headers=headers, json=package['sender_contact']).json()
+        self.assertEqual(1, len(result))
+        self.assertEqual(response['package_code'], result[0]['package']['code'])
+        self.assertEqual(response['route_id'], result[0]['_id'])

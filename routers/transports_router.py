@@ -17,7 +17,7 @@ class TransportsRouter:
     async def add_transport(transport: Transport, current_user: Annotated[User, Depends(get_current_active_user)]):
         if current_user.access_level < AccessLevel.Moderator:
             raise HTTPException(status_code=403, detail='Forbidden')
-        return DatabaseProvider.transports().insert_one(transport.dict()).inserted_id
+        return str(DatabaseProvider.transports().insert_one(transport.dict()).inserted_id)
 
     @staticmethod
     @router.post('/transports/delete/{transport_id}')
