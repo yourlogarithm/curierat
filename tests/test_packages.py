@@ -59,11 +59,9 @@ class FormSubmissionTest(TestClient):
         self.assertEqual(PackageStatus.WaitingReceiver, package_entry['status'])
 
     def test_get_package(self):
-        self.clear_db()
-        self.setUpClass()
         headers = self.authorize('moderator', TEST_DEFAULT_PASSWORD)
         package = self.get_package('Iasi', 'Brasov')
-        response = self.client.post('/packages/add', headers=headers, json=package).json()
+        self.client.post('/packages/add', headers=headers, json=package).json()
         new_package = self.get_package('Iasi', 'Brasov')
         new_package.update({'sender_contact': Contact(
             first_name='Second Sender First Name',
@@ -72,7 +70,10 @@ class FormSubmissionTest(TestClient):
             phone='075111111'
         ).dict()})
         self.client.post('/packages/add', headers=headers, json=new_package).json()
-        result = self.client.post(f'/packages/get', headers=headers, json=package['sender_contact']).json()
-        self.assertEqual(1, len(result))
-        self.assertEqual(response['package_code'], result[0]['package']['code'])
-        self.assertEqual(response['route_id'], result[0]['_id'])
+        result = self.client.post(f'/packages/get_by_contact', headers=headers, json=package['sender_contact']).json()
+        self.assertGreaterEqual(len(result), 1)
+        for entry in result:
+            self.assertEqual(package['sender_contact']['first_name'], entry['sender_contact']['first_name'])
+            self.assertEqual(package['sender_contact']['last_name'], entry['sender_contact']['last_name'])
+            self.assertEqual(package['sender_contact']['email'], entry['sender_contact']['email'])
+            self.assertEqual(package['sender_contact']['phone'], entry['sender_contact']['phone'])

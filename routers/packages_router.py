@@ -3,6 +3,8 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Annotated
 
+from pymongo import ReturnDocument
+
 from classes.contact import Contact
 from classes.database_provider import DatabaseProvider
 from classes.form import Form
@@ -16,6 +18,17 @@ from security.user import User
 
 class PackagesRouter:
     router = APIRouter()
+
+    @staticmethod
+    def _get_by_code(code: str):
+        packages = list(DatabaseProvider.routes().aggregate([
+            {'$match': {'packages.code': code}},
+            {'$unwind': '$packages'},
+            {'$match': {'packages.code': code}},
+        ]))
+        if len(packages) == 0:
+            raise HTTPException(status_code=404, detail='No packages found')
+        return packages[0]['packages']
 
     @staticmethod
     @router.post('/packages/calculate_price')
@@ -40,19 +53,31 @@ class PackagesRouter:
         return {'package_code': package_.code, 'route_id': str(best.id)}
 
     @staticmethod
-    @router.post('/packages/get')
-    async def get_package(contact: Contact, current_user: Annotated[User, Depends(get_current_active_user)]):
+    @router.post('/packages/get_by_contact')
+    async def get_package_by_contact(contact: Contact, current_user: Annotated[User, Depends(get_current_active_user)]):
         if current_user.access_level < AccessLevel.Moderator:
             raise HTTPException(status_code=403, detail='Forbidden')
         packages = list(DatabaseProvider.routes().aggregate([
             {'$match': {'packages.sender_contact': contact.dict()}},
             {'$unwind': '$packages'},
             {'$match': {'packages.sender_contact': contact.dict()}},
-            {'$project': {'_id': 1, 'package': '$packages'}}
+            {'$project': {'_id': 1, 'packages': 1}}
         ]))
+        if len(packages) == 0:
+            raise HTTPException(status_code=404, detail='No packages found')
+        result = []
         for package in packages:
-            package['_id'] = str(package['_id'])
-        return packages
+            entry = {'_id': str(package['_id'])}
+            entry.update(package['packages'])
+            result.append(entry)
+        return result
+
+    @staticmethod
+    @router.post('/packages/get_by_code')
+    async def get_package_by_code(code: str, current_user: Annotated[User, Depends(get_current_active_user)]):
+        if current_user.access_level < AccessLevel.Moderator:
+            raise HTTPException(status_code=403, detail='Forbidden')
+        return PackagesRouter._get_by_code(code)
 
     @staticmethod
     @router.post('/packages/change_status/{package_code}')
@@ -62,4 +87,9 @@ class PackagesRouter:
         update_result = DatabaseProvider.routes().update_one({'packages.code': package_code}, {'$set': {'packages.$.status': status}})
         if update_result.matched_count == 0:
             raise HTTPException(status_code=404, detail='Package not found')
-        return update_result.raw_result
+        package = Package.from_dict(PackagesRouter._get_by_code(package_code))
+        if package.status == PackageStatus.WaitingReceiver:
+            package.receiver_contact.notify()
+        elif package.status == PackageStatus.WaitingSender:
+            package.sender_contact.notify()
+        return {'status': 'ok'}
