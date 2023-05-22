@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List
 
 import requests
 
@@ -30,7 +30,7 @@ class OpenRouteService:
         return [cls._get_coordinates_of_city(city) for city in cities]
 
     @staticmethod
-    def _query_route_data_from_db(cities: List[str], data: Dict) -> Dict | None:
+    def _query_route_data_from_db(cities: List[str], data: dict) -> dict | None:
         queried_cities = list(DatabaseProvider.cities().find({'name': {'$in': cities}}))
         if len(queried_cities) == len(cities):
             mapped_values = {}
@@ -59,7 +59,7 @@ class OpenRouteService:
         return None
 
     @classmethod
-    def get_route_data(cls, cities: List[str]) -> Dict:
+    def get_route_data(cls, cities: List[str]) -> dict:
         """
         :param cities: list of city names
         :return: Two lists, one with distances (km) and one with durations (seconds)

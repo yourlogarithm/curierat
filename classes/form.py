@@ -35,6 +35,8 @@ class Form(BaseModel):
                 category_multiplier = 1.1
             case Category.Dangerous:
                 category_multiplier = 1.5
+            case Category.Regular:
+                category_multiplier = 1
             case _:
                 raise ValueError('Invalid category')
         data = OpenRouteService.get_route_data([self.office, self.destination])

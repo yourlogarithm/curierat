@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from datetime import datetime, timedelta
-from typing import List, Dict, Mapping
+from typing import List, Mapping
 
 from bson import ObjectId
 
