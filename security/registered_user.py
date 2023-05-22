@@ -1,5 +1,3 @@
-from pymongo.collection import Collection
-
 from classes.database_provider import DatabaseProvider
 from security.user import User
 
