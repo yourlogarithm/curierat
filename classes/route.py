@@ -78,6 +78,10 @@ class Route:
         self.current_weight += package.weight
         DatabaseProvider.routes().update_one({'_id': self.id}, {'$push': {'packages': package.to_dict()}, '$set': {'current_weight': self.current_weight}})
 
+    def increment_position(self):
+        self.current_position += 1
+        DatabaseProvider.routes().update_one({'_id': self.id}, {'$inc': {'current_position': 1}})
+
     def to_dict(self):
         dict_val = {
             'cities': self.cities,

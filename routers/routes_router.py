@@ -53,3 +53,15 @@ class RoutesRouter:
             raise HTTPException(status_code=404, detail='Package not found')
         route['_id'] = str(route['_id'])
         return route
+
+    @staticmethod
+    @router.post('/routes/increment_position/{route_id}')
+    async def increment_position(route_id: str, current_user: Annotated[User, Depends(get_current_active_user)]):
+        if current_user.access_level < AccessLevel.Moderator and current_user.access_level != AccessLevel.Courier:
+            raise HTTPException(status_code=403, detail='Forbidden')
+        route = DatabaseProvider.routes().find_one({'_id': ObjectId(route_id)})
+        if route is None:
+            raise HTTPException(status_code=404, detail='Route not found')
+        route = Route.from_dict(route)
+        route.increment_position()
+        return {'message': 'Position incremented'}
