@@ -4,9 +4,11 @@ from datetime import datetime, timedelta
 from typing import List, Mapping
 
 from bson import ObjectId
+from fastapi import HTTPException
 
 from classes.database_provider import DatabaseProvider
 from classes.open_route_service import OpenRouteService
+from classes.package_status import PackageStatus
 from classes.raw_route import RawRoute
 from classes.package import Package
 from classes.transport import Transport
@@ -58,7 +60,7 @@ class Route:
             schedule.append(schedule[-1] + timedelta(seconds=duration))
         transport = DatabaseProvider.transports().find_one({'_id': raw_route.transport})
         if transport is None:
-            raise ValueError('Transport not found')
+            raise HTTPException(status_code=404, detail='Transport not found')
         return cls(cities=raw_route.cities, transport=raw_route.transport, schedule=schedule, current_position=0, packages=[], current_weight=0)
 
     @classmethod
@@ -66,7 +68,7 @@ class Route:
         return cls(
             id=data['_id'],
             cities=data['cities'],
-            transport=Transport.from_dict(data['transport']),
+            transport=data['transport'],
             schedule=data['schedule'],
             current_position=data['current_position'],
             packages=[Package.from_dict(package) for package in data['packages']],
@@ -77,12 +79,16 @@ class Route:
         self.packages.append(package)
         transport = Transport.from_dict(DatabaseProvider.transports().find_one({'_id': self.transport}))
         if transport.max_weight < self.current_weight + package.weight:
-            raise ValueError('Package is too heavy')
+            raise HTTPException(status_code=406, detail='Package is too heavy')
         self.current_weight += package.weight
         DatabaseProvider.routes().update_one({'_id': self.id}, {'$push': {'packages': package.to_dict()}, '$set': {'current_weight': self.current_weight}})
 
     def increment_position(self):
+        if self.current_position >= len(self.cities) - 1:
+            raise HTTPException(status_code=406, detail='Current position is last city')
         self.current_position += 1
+        if self.current_position == len(self.cities) - 1 and len(self.packages) > 0:
+            DatabaseProvider.routes().update_one({'_id': self.id}, {'$set': {'packages.status': PackageStatus.WaitingReceiver}})
         DatabaseProvider.routes().update_one({'_id': self.id}, {'$inc': {'current_position': 1}})
 
     def to_dict(self):

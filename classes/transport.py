@@ -1,6 +1,7 @@
 import re
 from typing import Mapping
 
+from fastapi import HTTPException
 from pydantic import BaseModel
 from classes.category import Category
 
@@ -14,7 +15,7 @@ class Transport(BaseModel):
         super().__init__(**kwargs)
         self.id = self.id.upper().replace(' ', '')
         if re.match(r'[^A-Z0-9]', self.id):
-            raise ValueError('Transport ID must only contain letters and numbers')
+            raise HTTPException(status_code=406, detail='Transport ID must only contain letters and numbers')
 
     @classmethod
     def from_dict(cls, data: Mapping):

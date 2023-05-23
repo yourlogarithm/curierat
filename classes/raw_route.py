@@ -11,7 +11,7 @@ class RawRoute(BaseModel):
 
     def to_dict(self):
         return {
-            'cities': self.cities,
+            'cities': [city.strip() for city in self.cities],
             'start': self.start.timestamp(),
             'transport': self.transport
         }

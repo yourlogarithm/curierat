@@ -35,7 +35,7 @@ class RoutesRouter:
         return str(DatabaseProvider.routes().insert_one(Route.from_raw_route(route).to_dict()).inserted_id)
 
     @staticmethod
-    @router.post('/routes/delete/{id}')
+    @router.delete('/routes/delete/{id}')
     async def delete_route(id_: str, current_user: Annotated[User, Depends(get_current_active_user)]):
         if current_user.access_level < AccessLevel.Moderator:
             raise HTTPException(status_code=403, detail='Forbidden')
@@ -55,7 +55,7 @@ class RoutesRouter:
         return route
 
     @staticmethod
-    @router.post('/routes/increment_position/{route_id}')
+    @router.post('/routes/increment_position')
     async def increment_position(route_id: str, current_user: Annotated[User, Depends(get_current_active_user)]):
         if current_user.access_level < AccessLevel.Moderator and current_user.access_level != AccessLevel.Courier:
             raise HTTPException(status_code=403, detail='Forbidden')

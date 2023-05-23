@@ -43,7 +43,7 @@ class UsersRouter:
         return {'message': 'User added'}
 
     @staticmethod
-    @router.get('/users/delete/{username}')
+    @router.delete('/users/delete/{username}')
     async def delete_user(username: str, current_user: Annotated[User, Depends(get_current_active_user)]):
         if current_user.access_level < AccessLevel.Moderator:
             raise HTTPException(status_code=403, detail='Forbidden')

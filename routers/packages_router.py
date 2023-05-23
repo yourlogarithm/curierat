@@ -3,14 +3,13 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Annotated
 
-from pymongo import ReturnDocument
-
 from classes.contact import Contact
 from classes.database_provider import DatabaseProvider
 from classes.form import Form
 from classes.package_status import PackageStatus
 from classes.route import Route
 from classes.package import Package
+from classes.transport import Transport
 from dependencies import get_current_active_user
 from security.access_level import AccessLevel
 from security.user import User
@@ -35,10 +34,15 @@ class PackagesRouter:
         current_timestamp = datetime.now()
         routes = Route.get_best_routes(form_.office, form_.destination, current_timestamp)
         if len(routes) == 0:
-            raise HTTPException(status_code=404, detail='No route found')
-        best = next(route for route in routes if route.current_weight + form_.weight <= route.transport.max_weight)
+            raise HTTPException(status_code=400, detail='No route found')
+        best = None
+        for route in routes:
+            transport = Transport.from_dict(DatabaseProvider.transports().find_one({'_id': route.transport}))
+            if route.current_weight + form_.weight <= transport.max_weight and transport.cargo_category == form_.category:
+                best = route
+                break
         if best is None:
-            raise HTTPException(status_code=400, detail='No transport available')
+            raise HTTPException(status_code=400, detail='No route available')
         return best
 
     @staticmethod

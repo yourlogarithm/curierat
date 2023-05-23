@@ -17,10 +17,18 @@ class TransportsRouter:
     async def add_transport(transport: Transport, current_user: Annotated[User, Depends(get_current_active_user)]):
         if current_user.access_level < AccessLevel.Moderator:
             raise HTTPException(status_code=403, detail='Forbidden')
-        return str(DatabaseProvider.transports().insert_one(transport.dict()).inserted_id)
+        DatabaseProvider.transports().insert_one(transport.to_dict())
+        return {'message': 'Transport added'}
 
     @staticmethod
-    @router.post('/transports/delete/{transport_id}')
+    @router.get('/transports')
+    async def get_transports(current_user: Annotated[User, Depends(get_current_active_user)]):
+        if current_user.access_level < AccessLevel.Moderator:
+            raise HTTPException(status_code=403, detail='Forbidden')
+        return list(DatabaseProvider.transports().find())
+
+    @staticmethod
+    @router.delete('/transports/delete/{transport_id}')
     async def delete_transport(transport_id: str, current_user: Annotated[User, Depends(get_current_active_user)]):
         if current_user.access_level < AccessLevel.Moderator:
             raise HTTPException(status_code=403, detail='Forbidden')
