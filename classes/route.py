@@ -59,7 +59,7 @@ class Route:
         transport = DatabaseProvider.transports().find_one({'_id': raw_route.transport})
         if transport is None:
             raise ValueError('Transport not found')
-        return cls(cities=raw_route.cities, transport=transport, schedule=schedule, current_position=0, packages=[], current_weight=0)
+        return cls(cities=raw_route.cities, transport=raw_route.transport, schedule=schedule, current_position=0, packages=[], current_weight=0)
 
     @classmethod
     def from_dict(cls, data: Mapping):
