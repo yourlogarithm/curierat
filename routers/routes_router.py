@@ -17,8 +17,6 @@ class RoutesRouter:
     @staticmethod
     @router.get('/routes')
     async def get_routes(current_user: Annotated[User, Depends(get_current_active_user)]):
-        if current_user.access_level < AccessLevel.Moderator:
-            raise HTTPException(status_code=403, detail='Forbidden')
         routes = list(DatabaseProvider.routes().find())
         for route in routes:
             route['_id'] = str(route['_id'])
@@ -46,8 +44,6 @@ class RoutesRouter:
     @staticmethod
     @router.get('/routes/package/{package_code}')
     async def get_route_of_package_code(package_code: str, current_user: Annotated[User, Depends(get_current_active_user)]):
-        if current_user.access_level < AccessLevel.Moderator and current_user.access_level != AccessLevel.Office:
-            raise HTTPException(status_code=403, detail='Forbidden')
         route = DatabaseProvider.routes().find_one({'packages.code': package_code})
         if route is None:
             raise HTTPException(status_code=404, detail='Package not found')

@@ -15,8 +15,6 @@ class UsersRouter:
     @staticmethod
     @router.get('/users')
     async def get_all_users(current_user: Annotated[User, Depends(get_current_active_user)]):
-        if current_user.access_level < AccessLevel.Moderator:
-            raise HTTPException(status_code=403, detail='Forbidden')
         return list(DatabaseProvider.users().find({}, {'_id': 0, 'password': 0}))
 
     @staticmethod

@@ -23,8 +23,6 @@ class TransportsRouter:
     @staticmethod
     @router.get('/transports')
     async def get_transports(current_user: Annotated[User, Depends(get_current_active_user)]):
-        if current_user.access_level < AccessLevel.Moderator:
-            raise HTTPException(status_code=403, detail='Forbidden')
         return list(DatabaseProvider.transports().find())
 
     @staticmethod
