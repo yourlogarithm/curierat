@@ -15,7 +15,7 @@ from classes.transport import Transport
 @dataclass
 class Route:
     cities: List[str]
-    transport: Transport
+    transport: str
     schedule: List[datetime]
     current_position: int
     packages: List[Package]
@@ -75,6 +75,9 @@ class Route:
 
     def add_package(self, package: Package):
         self.packages.append(package)
+        transport = Transport.from_dict(DatabaseProvider.transports().find_one({'_id': self.transport}))
+        if transport.max_weight < self.current_weight + package.weight:
+            raise ValueError('Package is too heavy')
         self.current_weight += package.weight
         DatabaseProvider.routes().update_one({'_id': self.id}, {'$push': {'packages': package.to_dict()}, '$set': {'current_weight': self.current_weight}})
 
