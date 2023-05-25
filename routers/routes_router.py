@@ -27,6 +27,8 @@ class RoutesRouter:
     async def add_route(route: RawRoute, current_user: Annotated[User, Depends(get_current_active_user)]):
         if current_user.access_level < AccessLevel.Admin:
             raise HTTPException(status_code=403, detail='Forbidden')
+        if len(route.cities) <= 1 or route.cities[0] == route.cities[-1]:
+            raise HTTPException(status_code=400, detail='Invalid route')
         transport = DatabaseProvider.transports().find_one({'_id': route.transport})
         if not transport:
             raise HTTPException(status_code=400, detail='Transport not found')
